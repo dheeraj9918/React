@@ -1,0 +1,7 @@
+#Node artfact file
+
+node_modules/
+
+dist/
+
+.parcel-cache/
