@@ -1,55 +1,78 @@
 
-import { restaurentlist } from "../constants";
 import RestaurentCard from "./RestaurentCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Shimmer from "../components/ShimmerUI";
+import { Link } from "react-router-dom";
+import { filterinfo } from "../utils/Helper";
+import useOnline from "../utils/useOnline";
 
 
 //what is state?
 //what is hooks?
 //what is use state?
-function filterinfo  (searchInput,restaurants){
-   const filterinfo = restaurants.filter((restaurant)=>
-    restaurant.info.name.toLowerCase().includes(searchInput.toLowerCase())
-    );
-    return filterinfo;
-}
 
-const Body = () => {
-    //   const searchTxt  = "Rollking"
-    const [restaurants, setRestaurants] = useState(restaurentlist);
+
+const Body = (props) => {
+    const [allRestaurants, setallRestaurants] = useState([])
+    const [filteredRestaurants, setfilteredRestaurants] = useState([]);
     // searchTxt is a local state variable;
     const [searchInput, setSearchInput] = useState(""); // to create a state variable;
     // this useState hooks returns a array; and first element of the array is the initial value;
     // {searchInput} is the variable name; and setSearchInput is a function to update the search input;
-    
 
 
-    return (
+    useEffect(() => {
+        getRestaurants();
+    }, [])
+
+    async function getRestaurants() {
+        const data = await fetch(
+            "https://www.swiggy.com/dapi/restaurants/list/v5?lat=28.6848763&lng=77.21608499999999&is-seo-homepage-enabled=true&page_type=DESKTOP_WEB_LISTING"
+        );
+        const json = await data.json();
+        setallRestaurants(json?.data?.cards[2]?.card?.card?.gridElements?.infoWithStyle?.restaurants);
+        setfilteredRestaurants(json?.data?.cards[2]?.card?.card?.gridElements?.infoWithStyle?.restaurants);
+    }
+
+    const online = useOnline();
+    if(!online){
+        return <h1>Please ,Check your Internet connection</h1>;
+    }
+        
+    //not renderd component early return;
+    if (!allRestaurants) return null;
+    return (allRestaurants?.length == 0) ? (
+        <Shimmer />) : (
         <>
-            <div className="search-containor">
+            <div className="search-containor p-5 bg-pink-200">
                 <input
                     type="text"
                     placeholder="Search"
-                    className="search-input"
+                    className="p-2 rounded-l-md"
                     value={searchInput}
                     onChange={(e) => {
                         setSearchInput(e.target.value);
                     }} />
                 <button
-                    className="search-btn"
-                    onClick ={()=>{
-                       
-                       const info = filterinfo(searchInput,restaurants);
-                       setRestaurants(info);
+                    className="p-2 rounded-r-md bg-sky-500"
+                    onClick={() => {
+
+                        const info = filterinfo(searchInput, allRestaurants);
+                        setfilteredRestaurants(info);
                     }}
                 >Search</button>
             </div>
-            <div className="restront-list">
+            <div className="flex justify-between flex-wrap py-2 px-2 ">
                 {
-                    restaurants.map(restaurent => {
+
+                    filteredRestaurants.map(restaurent => {
+                         
                         return (
-                            <RestaurentCard {...restaurent.info} />
+
+                          <Link to ={"/restaurent/" +restaurent.info.id } key={restaurent.info.id}>  <RestaurentCard {...restaurent.info}  /></Link>
+
                         )
+                    
                     })
                 }
             </div>
